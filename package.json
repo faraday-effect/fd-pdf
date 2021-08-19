@@ -8,12 +8,14 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev"
+    "dev": "quasar dev",
+    "serve-scratch-files": "http-server --port 3000 ~/Scratch"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
+    "http-server": "^13.0.0",
     "lodash": "^4.17.21",
     "pdfjs-dist": "^2.9.359",
     "quasar": "^2.0.3",

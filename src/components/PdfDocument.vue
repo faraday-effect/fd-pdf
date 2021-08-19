@@ -1,9 +1,12 @@
 <template>
-  <pdf-page
-    v-for="pageProxy in pageProxies"
-    v-bind="{ pageProxy, scale }"
-    :key="pageProxy.pageNumber"
-  />
+  <div class="pdf-document row justify-center q-gutter-md">
+    <pdf-page
+      class="col-2"
+      v-for="pageProxy in pageProxies"
+      v-bind="{ pageProxy, scale }"
+      :key="pageProxy.pageNumber"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -43,8 +46,9 @@ export default defineComponent({
       const loadingTask = getDocument(url);
       this.pdfDocumentProxy = await loadingTask.promise;
       const numPages = this.pdfDocumentProxy.numPages;
+      console.log('PAGES', numPages);
       this.pageProxies = await Promise.all(
-        _.map(_.range(1, numPages), (pageNum) =>
+        _.map(_.range(1, numPages + 1), (pageNum) =>
           this.pdfDocumentProxy.getPage(pageNum)
         )
       );
@@ -61,3 +65,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style>
+.pdf-document {
+  background: aqua;
+}
+</style>

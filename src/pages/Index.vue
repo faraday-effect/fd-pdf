@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row items-center justify-evenly">
+  <q-page>
     <pdf-document v-bind="{ url, scale }" />
   </q-page>
 </template>
@@ -22,8 +22,10 @@ export default defineComponent({
 
   data() {
     return {
-      url: 'https://cdn.filestackcontent.com/5qOCEpKzQldoRsVatUPS',
-      scale: 1,
+      // url: 'https://cdn.filestackcontent.com/5qOCEpKzQldoRsVatUPS',
+      // url: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+      url: 'http://localhost:3000/git-intro.slides.pdf',
+      scale: 2.0,
     };
   },
 });

@@ -6,6 +6,7 @@ PDF Viewer
 
 Early versions relied heavily on
 [these articles](https://rossta.net/blog/series/pdf-viewer.html).
+See the [GitHub repo](https://github.com/rossta/vue-pdfjs-demo).
 
 ## Install the dependencies
 ```bash
