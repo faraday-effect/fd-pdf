@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <pdf-document v-bind="{ url, scale }" />
+    <pdf-document :url="url" />
   </q-page>
 </template>
 
