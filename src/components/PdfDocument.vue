@@ -3,9 +3,9 @@
     <q-badge color="secondary"> Scale {{ scale }} </q-badge>
     <q-slider
       v-model="scale"
-      :max="3.0"
-      :min="0.25"
-      :step="0.25"
+      :max="7.0"
+      :min="1.0"
+      :step="1.0"
       label
       markers
     />

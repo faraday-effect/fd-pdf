@@ -4,8 +4,14 @@
 
 <script lang="ts">
 import { PDFPageProxy } from 'pdfjs-dist/types/display/api';
-import { PageViewport } from 'pdfjs-dist/types/display/display_utils';
-import { defineComponent, PropType, computed, onMounted, ref } from 'vue';
+import {
+  defineComponent,
+  PropType,
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 
 const PIXEL_RATIO = window.devicePixelRatio || 1;
 
@@ -22,44 +28,35 @@ export default defineComponent({
   },
 
   setup(props, context) {
-    let viewport = ref({} as PageViewport);
     const theCanvas = ref<InstanceType<typeof HTMLCanvasElement>>();
 
-    viewport.value = props.pageProxy.getViewport({ scale: props.scale });
-    console.log(`Viewport ${viewport.value.height} x ${viewport.value.width}`);
-
-    const actualSizeViewport = computed(() =>
-      viewport.value.clone({ scale: props.scale })
-    );
+    const viewport = computed(() => {
+      const vp = props.pageProxy.getViewport({ scale: props.scale });
+      console.log(`Viewport ${vp.height} x ${vp.width}`);
+      return vp;
+    });
 
     const canvasAttrs = computed(() => {
       const canvasHeight = Math.ceil(viewport.value.height);
       const canvasWidth = Math.ceil(viewport.value.width);
 
-      const { width: actualWidth, height: actualHeight } =
-        actualSizeViewport.value;
-      console.log('ACTUAL', actualHeight, actualWidth);
       const canvasStyle: string = [
-        `height: ${Math.ceil(actualHeight / PIXEL_RATIO)}px;`,
-        `width: ${Math.ceil(actualWidth / PIXEL_RATIO)}px;`,
+        `width: ${Math.ceil(canvasWidth / PIXEL_RATIO)}px;`,
+        `height: ${Math.ceil(canvasHeight / PIXEL_RATIO)}px;`,
       ].join(' ');
 
-      const attrs = {
+      return {
         height: canvasHeight,
         width: canvasWidth,
         style: canvasStyle,
       };
-      console.log('ATTRS', attrs);
-      return attrs;
     });
 
     const drawPage = () => {
       const canvasContext = theCanvas.value?.getContext('2d');
-      console.log('CANVAS CONTEXT', canvasContext);
       if (!canvasContext) {
         throw new Error('No canvas context');
       }
-      canvasContext.scale(PIXEL_RATIO, PIXEL_RATIO);
 
       props.pageProxy
         .render({
@@ -75,9 +72,8 @@ export default defineComponent({
         });
     };
 
-    onMounted(() => {
-      drawPage();
-    });
+    onMounted(drawPage);
+    watch(viewport, drawPage);
 
     return {
       canvasAttrs,
