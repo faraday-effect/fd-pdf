@@ -50,13 +50,13 @@ export default defineComponent({
   },
 
   setup(props) {
+    const { url } = toRefs(props);
+
     let pdfDocumentProxy = ref({} as PDFDocumentProxy);
     let numPages = ref(0);
     let pageProxies = ref([] as PDFPageProxy[]);
     let pageOptions = ref([] as { label: string; value: number }[]);
     let pageVisible = ref([] as number[]);
-
-    const { url } = toRefs(props);
 
     const loadPdf = async () => {
       console.log(`Loading PDF from '${url.value}'`);

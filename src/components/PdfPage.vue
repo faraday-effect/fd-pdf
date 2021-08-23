@@ -1,11 +1,11 @@
 <template>
-  <canvas v-if="visible" v-bind="canvasAttrs" />
+  <canvas v-if="visible" v-bind="canvasAttrs" ref="theCanvas" />
 </template>
 
 <script lang="ts">
 import { PDFPageProxy } from 'pdfjs-dist/types/display/api';
 import { PageViewport } from 'pdfjs-dist/types/display/display_utils';
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, computed, onMounted, ref } from 'vue';
 
 const PIXEL_RATIO = window.devicePixelRatio || 1;
 
@@ -21,29 +21,20 @@ export default defineComponent({
     visible: { type: Boolean, default: true },
   },
 
-  data() {
-    return {
-      viewport: {} as PageViewport,
-    };
-  },
+  setup(props, context) {
+    let viewport = {} as PageViewport;
+    const theCanvas = ref<InstanceType<typeof HTMLCanvasElement>>();
 
-  created() {
-    this.viewport = this.pageProxy.getViewport({ scale: 1 });
-    console.log(`Viewport ${this.viewport.height} x ${this.viewport.width}`);
-  },
+    viewport = props.pageProxy.getViewport({ scale: 1 });
+    console.log(`Viewport ${viewport.height} x ${viewport.width}`);
 
-  mounted() {
-    this.drawPage();
-  },
-
-  computed: {
-    canvasAttrs() {
-      const canvasHeight = Math.floor(this.viewport.height * PIXEL_RATIO);
-      const canvasWidth = Math.floor(this.viewport.width * PIXEL_RATIO);
+    const canvasAttrs = computed(() => {
+      const canvasHeight = Math.floor(viewport.height * PIXEL_RATIO);
+      const canvasWidth = Math.floor(viewport.width * PIXEL_RATIO);
 
       const canvasStyle: string = [
-        `height: ${Math.floor(this.viewport.height * this.scale)}px;`,
-        `width: ${Math.floor(this.viewport.width * this.scale)}px;`,
+        `height: ${Math.floor(viewport.height * props.scale)}px;`,
+        `width: ${Math.floor(viewport.width * props.scale)}px;`,
       ].join(' ');
 
       const attrs = {
@@ -53,30 +44,38 @@ export default defineComponent({
       };
       console.log('ATTRS', attrs);
       return attrs;
-    },
-  },
+    });
 
-  methods: {
-    drawPage() {
-      const canvasContext = (this.$el as HTMLCanvasElement).getContext('2d');
+    const drawPage = () => {
+      const canvasContext = theCanvas.value?.getContext('2d');
+      console.log('CANVAS CONTEXT', canvasContext);
       if (!canvasContext) {
-        return;
+        throw new Error('No canvas context');
       }
       canvasContext.scale(PIXEL_RATIO, PIXEL_RATIO);
 
-      this.pageProxy
+      props.pageProxy
         .render({
           canvasContext,
-          viewport: this.viewport,
+          viewport: viewport,
         })
         .promise.then(() => {
           console.log('Rendered');
-          this.$emit('rendered', this.pageProxy);
+          context.emit('rendered', props.pageProxy);
         })
         .catch((error) => {
           throw error;
         });
-    },
+    };
+
+    onMounted(() => {
+      drawPage();
+    });
+
+    return {
+      canvasAttrs,
+      theCanvas,
+    };
   },
 });
 </script>
