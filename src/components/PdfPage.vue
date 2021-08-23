@@ -22,19 +22,26 @@ export default defineComponent({
   },
 
   setup(props, context) {
-    let viewport = {} as PageViewport;
+    let viewport = ref({} as PageViewport);
     const theCanvas = ref<InstanceType<typeof HTMLCanvasElement>>();
 
-    viewport = props.pageProxy.getViewport({ scale: 1 });
-    console.log(`Viewport ${viewport.height} x ${viewport.width}`);
+    viewport.value = props.pageProxy.getViewport({ scale: props.scale });
+    console.log(`Viewport ${viewport.value.height} x ${viewport.value.width}`);
+
+    const actualSizeViewport = computed(() =>
+      viewport.value.clone({ scale: props.scale })
+    );
 
     const canvasAttrs = computed(() => {
-      const canvasHeight = Math.floor(viewport.height * PIXEL_RATIO);
-      const canvasWidth = Math.floor(viewport.width * PIXEL_RATIO);
+      const canvasHeight = Math.ceil(viewport.value.height);
+      const canvasWidth = Math.ceil(viewport.value.width);
 
+      const { width: actualWidth, height: actualHeight } =
+        actualSizeViewport.value;
+      console.log('ACTUAL', actualHeight, actualWidth);
       const canvasStyle: string = [
-        `height: ${Math.floor(viewport.height * props.scale)}px;`,
-        `width: ${Math.floor(viewport.width * props.scale)}px;`,
+        `height: ${Math.ceil(actualHeight / PIXEL_RATIO)}px;`,
+        `width: ${Math.ceil(actualWidth / PIXEL_RATIO)}px;`,
       ].join(' ');
 
       const attrs = {
@@ -57,7 +64,7 @@ export default defineComponent({
       props.pageProxy
         .render({
           canvasContext,
-          viewport: viewport,
+          viewport: viewport.value,
         })
         .promise.then(() => {
           console.log('Rendered');
