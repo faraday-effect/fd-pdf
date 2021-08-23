@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, toRefs, onMounted, watch, computed, ref } from 'vue';
 import * as _ from 'lodash';
 import { getDocument } from 'pdfjs-dist';
 import { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist/types/display/api';
@@ -42,66 +42,75 @@ require('pdfjs-dist/webpack');
 
 export default defineComponent({
   name: 'PdfDocument',
+
   components: { PdfPage },
+
   props: {
     url: { type: String, required: true },
   },
 
-  data() {
-    return {
-      pdfDocumentProxy: {} as PDFDocumentProxy,
-      pageProxies: [] as PDFPageProxy[],
-      scale: 1.0,
-      pageOptions: [] as { label: string; value: number }[],
-      pageVisible: [] as number[],
-    };
-  },
+  setup(props) {
+    let pdfDocumentProxy = ref({} as PDFDocumentProxy);
+    let numPages = ref(0);
+    let pageProxies = ref([] as PDFPageProxy[]);
+    let pageOptions = ref([] as { label: string; value: number }[]);
+    let pageVisible = ref([] as number[]);
 
-  computed: {
-    // FIXME - This _should_ return PDFPageProxy[], but that results in errors.
-    visiblePages(): unknown[] {
-      return _.filter(this.pageProxies, (proxy) =>
-        this.pageVisible.includes(proxy.pageNumber)
-      );
-    },
-  },
+    const { url } = toRefs(props);
 
-  methods: {
-    async loadPDF(url: string) {
-      console.log(`Loading PDF from '${url}'`);
-      const loadingTask = getDocument(url);
-      this.pdfDocumentProxy = await loadingTask.promise;
+    const loadPdf = async () => {
+      console.log(`Loading PDF from '${url.value}'`);
+      const loadingTask = getDocument(url.value);
+      pdfDocumentProxy.value = await loadingTask.promise;
 
-      const numPages = this.pdfDocumentProxy.numPages;
+      numPages.value = pdfDocumentProxy.value.numPages;
       console.log('PAGES', numPages);
-      this.pageProxies = await Promise.all(
-        _.map(_.range(1, numPages + 1), (pageNum) => {
-          this.pageOptions.push({
+
+      pageProxies.value = await Promise.all(
+        _.map(_.range(1, numPages.value + 1), (pageNum) => {
+          pageOptions.value.push({
             label: `P${pageNum}`,
             value: pageNum,
           });
-          this.pageVisible.push(pageNum);
-          return this.pdfDocumentProxy.getPage(pageNum);
+          pageVisible.value.push(pageNum);
+          return pdfDocumentProxy.value.getPage(pageNum);
         })
       );
-    },
+    };
 
-    showAllPages() {
-      this.pageVisible = _.range(1, this.pdfDocumentProxy.numPages + 1);
-    },
+    const visiblePages = computed(() => {
+      return _.filter(pageProxies.value, (proxy) =>
+        pageVisible.value.includes(proxy.pageNumber)
+      );
+    });
 
-    hideAllPages() {
-      this.pageVisible = [];
-    },
+    const showAllPages = () => {
+      pageVisible.value = _.range(1, pdfDocumentProxy.value.numPages + 1);
+    };
+
+    const hideAllPages = () => {
+      pageVisible.value = [];
+    };
+
+    onMounted(loadPdf);
+    watch(url, loadPdf);
+
+    return {
+      visiblePages,
+      showAllPages,
+      hideAllPages,
+      pdfDocumentProxy,
+      numPages,
+      pageProxies,
+      pageOptions,
+      pageVisible,
+    };
   },
 
-  watch: {
-    url: {
-      async handler(newUrl) {
-        await this.loadPDF(newUrl);
-      },
-      immediate: true,
-    },
+  data() {
+    return {
+      scale: 1.0,
+    };
   },
 });
 </script>
