@@ -28,10 +28,9 @@
 import { defineComponent, toRefs, onMounted, watch, computed, ref } from 'vue';
 import * as _ from 'lodash';
 import PdfPage from 'components/PdfPage.vue';
+import usePdf from 'src/composables/usePdf';
 
 import 'pdfjs-dist/webpack';
-
-import usePdf from 'src/composables/usePdf';
 
 export default defineComponent({
   name: 'PdfDocument',
