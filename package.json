@@ -9,7 +9,7 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "serve-scratch-files": "http-server --port 3000 ~/Scratch"
+    "serve-scratch-files": "http-server ~/Scratch --port 3000 --cors"
   },
   "dependencies": {
     "@quasar/extras": "^1.10.11",
@@ -18,13 +18,13 @@
     "http-server": "^13.0.0",
     "lodash": "^4.17.21",
     "pdfjs-dist": "^2.9.359",
-    "quasar": "^2.0.3",
+    "quasar": "^2.0.4",
     "vuex": "^4.0.2",
     "worker-loader": "^3.0.8"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.15.0",
-    "@quasar/app": "^3.0.4",
+    "@quasar/app": "^3.1.0",
     "@types/lodash": "^4.14.172",
     "@types/node": "^16.6.2",
     "@typescript-eslint/eslint-plugin": "^4.29.2",

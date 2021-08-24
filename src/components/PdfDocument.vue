@@ -1,14 +1,7 @@
 <template>
   <div class="q-pa-md">
     <q-badge color="secondary"> Scale {{ scale }} </q-badge>
-    <q-slider
-      v-model="scale"
-      :max="7.0"
-      :min="1.0"
-      :step="1.0"
-      label
-      markers
-    />
+    <q-slider v-model="scale" :max="7.0" :min="1.0" :step="1.0" label markers />
   </div>
   <div class="q-pa-md">
     <q-option-group
@@ -38,7 +31,7 @@ import { getDocument } from 'pdfjs-dist';
 import { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist/types/display/api';
 import PdfPage from 'components/PdfPage.vue';
 
-require('pdfjs-dist/webpack');
+import 'pdfjs-dist/webpack';
 
 export default defineComponent({
   name: 'PdfDocument',
@@ -47,6 +40,12 @@ export default defineComponent({
 
   props: {
     url: { type: String, required: true },
+  },
+
+  data() {
+    return {
+      scale: 1.0,
+    };
   },
 
   setup(props) {
@@ -64,7 +63,7 @@ export default defineComponent({
       pdfDocumentProxy.value = await loadingTask.promise;
 
       numPages.value = pdfDocumentProxy.value.numPages;
-      console.log('PAGES', numPages);
+      console.log('PAGES', numPages.value);
 
       pageProxies.value = await Promise.all(
         _.map(_.range(1, numPages.value + 1), (pageNum) => {
@@ -104,12 +103,6 @@ export default defineComponent({
       pageProxies,
       pageOptions,
       pageVisible,
-    };
-  },
-
-  data() {
-    return {
-      scale: 1.0,
     };
   },
 });

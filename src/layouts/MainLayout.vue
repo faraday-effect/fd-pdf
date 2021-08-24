@@ -13,7 +13,7 @@
 
         <q-toolbar-title> fe-pdf </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>Faraday</div>
       </q-toolbar>
     </q-header>
 
