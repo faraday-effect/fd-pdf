@@ -27,11 +27,11 @@
 <script lang="ts">
 import { defineComponent, toRefs, onMounted, watch, computed, ref } from 'vue';
 import * as _ from 'lodash';
-import { getDocument } from 'pdfjs-dist';
-import { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist/types/display/api';
 import PdfPage from 'components/PdfPage.vue';
 
 import 'pdfjs-dist/webpack';
+
+import usePdf from 'src/composables/usePdf';
 
 export default defineComponent({
   name: 'PdfDocument',
@@ -51,30 +51,22 @@ export default defineComponent({
   setup(props) {
     const { url } = toRefs(props);
 
-    let pdfDocumentProxy = ref({} as PDFDocumentProxy);
-    let numPages = ref(0);
-    let pageProxies = ref([] as PDFPageProxy[]);
+    const { pdfDocumentProxy, numPages, pageProxies } = usePdf(url);
+
     let pageOptions = ref([] as { label: string; value: number }[]);
     let pageVisible = ref([] as number[]);
 
-    const loadPdf = async () => {
-      console.log(`Loading PDF from '${url.value}'`);
-      const loadingTask = getDocument(url.value);
-      pdfDocumentProxy.value = await loadingTask.promise;
-
-      numPages.value = pdfDocumentProxy.value.numPages;
-      console.log('PAGES', numPages.value);
-
-      pageProxies.value = await Promise.all(
-        _.map(_.range(1, numPages.value + 1), (pageNum) => {
-          pageOptions.value.push({
-            label: `P${pageNum}`,
-            value: pageNum,
-          });
-          pageVisible.value.push(pageNum);
-          return pdfDocumentProxy.value.getPage(pageNum);
-        })
-      );
+    const createControls = () => {
+      console.log('Creating controls');
+      _.map(pageProxies.value, (pageProxy) => {
+        const pageNum = pageProxy.pageNumber;
+        pageOptions.value.push({
+          label: `P${pageNum}`,
+          value: pageNum,
+        });
+        pageVisible.value.push(pageNum);
+      });
+      console.log('Created %d controls', pageProxies.value.length);
     };
 
     const visiblePages = computed(() => {
@@ -91,18 +83,18 @@ export default defineComponent({
       pageVisible.value = [];
     };
 
-    onMounted(loadPdf);
-    watch(url, loadPdf);
+    onMounted(createControls);
+    watch(pageProxies, createControls);
 
     return {
-      visiblePages,
-      showAllPages,
-      hideAllPages,
       pdfDocumentProxy,
       numPages,
       pageProxies,
       pageOptions,
       pageVisible,
+      visiblePages,
+      showAllPages,
+      hideAllPages,
     };
   },
 });
