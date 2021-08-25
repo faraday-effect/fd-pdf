@@ -30,8 +30,6 @@ import * as _ from 'lodash';
 import PdfPage from 'components/PdfPage.vue';
 import usePdf from 'src/composables/usePdf';
 
-import 'pdfjs-dist/webpack';
-
 export default defineComponent({
   name: 'PdfDocument',
 

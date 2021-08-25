@@ -1,5 +1,5 @@
 <template>
-  <canvas v-if="visible" v-bind="canvasAttrs" ref="theCanvas" />
+   <canvas v-if="visible" v-bind="canvasAttrs" ref="theCanvas"></canvas>
 </template>
 
 <script lang="ts">

@@ -45,7 +45,6 @@
 <script lang="ts">
 import { defineComponent, ref, toRefs, computed } from 'vue';
 import PdfPage from 'components/PdfPage.vue';
-import 'pdfjs-dist/webpack';
 import usePdf from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
 
