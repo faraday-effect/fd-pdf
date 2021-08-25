@@ -1,19 +1,16 @@
 <template>
   <q-page>
-    <pdf-slides :url="url" />
+    <pdf-thumbnails :url="url" />
   </q-page>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import PdfSlides from 'components/PdfSlides.vue';
-
+import PdfThumbnails from 'components/PdfThumbnails.vue';
 
 export default defineComponent({
   name: 'IndexPage',
-
-  components: { PdfSlides },
-
+  components: { PdfThumbnails },
   data() {
     return {
       // url: 'https://cdn.filestackcontent.com/5qOCEpKzQldoRsVatUPS',
