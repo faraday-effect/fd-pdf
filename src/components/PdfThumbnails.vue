@@ -14,26 +14,21 @@ export default defineComponent({
     url: { type: String, required: true },
   },
 
-  data() {
-    return {
-      pageContainers: [] as PdfPageContainer[],
-    };
-  },
-
   mounted() {
     const pdfContainer = new PdfContainer(this.url);
+    const theDiv = this.$el as HTMLDivElement;
+    console.log('THE DIV', theDiv);
+
     pdfContainer
       .loadPdf()
-      .then(() =>
-        pdfContainer.getAllPages(1.0).then((pageContainers) => {
-          this.pageContainers = pageContainers;
-          const theDiv = this.$el as HTMLDivElement;
-          console.log('THE DIV', theDiv);
-          _.map(this.pageContainers, (pageContainer) =>
-            theDiv.appendChild(pageContainer.canvas)
-          );
-        })
-      )
+      .then(() => pdfContainer.getAllPages(1.0))
+      .then((pageContainers) => {
+        _.map(pageContainers, (pageContainer) =>
+          theDiv.appendChild(pageContainer.canvas)
+        );
+      })
+      .then(() => pdfContainer.getOnePage(18, 2))
+      .then((pageContainer) => theDiv.appendChild(pageContainer.canvas))
       .catch((error) => {
         throw error;
       });

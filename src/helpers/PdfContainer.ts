@@ -20,7 +20,7 @@ export class PdfContainer {
   private pdfDocumentProxy = {} as PDFDocumentProxy;
   private numPages = -Infinity;
   private pdfPageProxies = [] as PDFPageProxy[];
-  private pageCache = new Map<number, PdfPageContainer[]>();
+  private pageContainersByScale = new Map<number, PdfPageContainer[]>();
 
   constructor(private url: string) {}
 
@@ -53,30 +53,47 @@ export class PdfContainer {
     }
   }
 
-  private async ensureScaleCached(scale: number) {
-    PdfContainer.validateScale(scale);
-    if (!this.pageCache.get(scale)) {
-      this.pageCache.set(scale, await this.drawAllPages(scale));
-    }
-  }
-
-  private getPageContainer(scale: number) {
-    const pdfPageContainer = this.pageCache.get(scale);
-    if (!pdfPageContainer) {
-      throw new Error(`No pages with scale ${scale}`);
-    }
-    return pdfPageContainer;
-  }
-
-  async getPage(pageNumber: number, scale: number): Promise<PdfPageContainer> {
+  async getOnePage(
+    pageNumber: number,
+    scale: number
+  ): Promise<PdfPageContainer> {
     this.validatePageNumber(pageNumber);
-    const allPages = await this.getAllPages(scale);
-    return allPages[pageNumber - 1];
+    PdfContainer.validateScale(scale);
+
+    let pageContainers = this.pageContainersByScale.get(scale);
+    if (!pageContainers) {
+      console.log(`Initialize page containers for scale ${scale}`);
+      pageContainers = [];
+      this.pageContainersByScale.set(scale, pageContainers);
+    }
+
+    // Page number is unity-based; arrays are zero-based.
+    const pageIndex = pageNumber - 1;
+
+    if (!pageContainers[pageIndex]) {
+      console.log(`Draw page ${pageNumber}`);
+      pageContainers[pageIndex] = await this.drawOnePage(
+        this.pdfPageProxies[pageIndex],
+        scale
+      );
+      this.pageContainersByScale.set(scale, pageContainers);
+    }
+
+    console.log(`Return page ${pageNumber} for scale ${scale}`);
+    return pageContainers[pageIndex];
   }
 
   async getAllPages(scale: number): Promise<PdfPageContainer[]> {
-    await this.ensureScaleCached(scale);
-    return this.getPageContainer(scale);
+    PdfContainer.validateScale(scale);
+
+    let pageContainers = this.pageContainersByScale.get(scale);
+    if (!pageContainers) {
+      console.log(`Draw all pages`);
+      pageContainers = await this.drawAllPages(scale);
+      this.pageContainersByScale.set(scale, pageContainers);
+    }
+
+    return pageContainers;
   }
 
   private drawOnePage(
