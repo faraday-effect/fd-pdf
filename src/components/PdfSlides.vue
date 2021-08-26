@@ -1,57 +1,22 @@
 <template>
   <div class="row justify-center">
-    <div class="column q-pa-md q-gutter-md">
-      <q-btn
-        color="secondary"
-        label="First"
-        :disable="isFirstPage"
-        @click="firstPage"
-      />
-      <q-btn
-        color="primary"
-        label="Prev"
-        :disable="!havePreviousPage"
-        @click="previousPage"
-      />
-      <q-slider
-        v-model="currentPage"
-        :min="0"
-        :max="numPages - 1"
-        vertical
-        label-always
-        :label-value="currentPage + 1"
-      />
-      <q-btn
-        color="primary"
-        label="Next"
-        :disable="!haveNextPage"
-        @click="nextPage"
-      />
-      <q-btn
-        color="secondary"
-        label="Last"
-        :disable="isLastPage"
-        @click="lastPage"
-      />
-    </div>
-    <pdf-page
-      v-if="currentPageProxy"
-      :scale="scale"
-      :page-proxy="currentPageProxy"
-    />
+    Index: {{ currentPageIndex }}, Count: {{ numPages }}
+    <pdf-page-picker :num-pages="numPages" @pageIndex="updatePageIndex" />
+    <pdf-page v-if="currentCanvas" :canvas="currentCanvas" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed, toRefs, onMounted } from 'vue';
 import PdfPage from 'components/PdfPage.vue';
-import usePdf from 'src/composables/usePdf';
+import { PdfDocAsDrawn, usePdf } from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
+import PdfPagePicker from 'components/PdfPagePicker.vue';
 
 export default defineComponent({
   name: 'PdfSlides',
 
-  components: { PdfPage },
+  components: { PdfPagePicker, PdfPage },
 
   props: {
     url: { type: String, required: true },
@@ -60,69 +25,63 @@ export default defineComponent({
   setup(props) {
     const { url } = toRefs(props);
     const $q = useQuasar();
-    const { loadPdf, pdfContainer } = usePdf();
+    const { loadPdf, drawAllPages } = usePdf();
 
     const currentPageIndex = ref(0);
-    const currentPageProxy = computed(
-      () => pdfContainer.pdfPageProxies[currentPageIndex.value]
-    );
-    const numPages = computed(() => pdfContainer.numPages);
+    const updatePageIndex = (newIndex: number) => {
+      console.log('Update index to', newIndex);
+      currentPageIndex.value = newIndex;
+    };
 
     const contentSize = computed(() => {
       const windowHeight = $q.screen.height;
       const windowWidth = $q.screen.width;
-      const rtn = { width: windowWidth, height: windowHeight - 50 };
-      console.log('contentSize', rtn);
-      return rtn;
+      return {
+        width: windowWidth,
+        height: windowHeight - 50,
+      };
     });
 
     const scale = computed(() => {
-      if (numPages.value < 1) {
+      if (!currentCanvas.value) {
         return 1.0;
       }
-      const viewport = currentPageProxy.value.getViewport({ scale: 1.0 });
       const { height: contentHeight, width: contentWidth } = contentSize.value;
       const verticalScale =
-        (contentHeight / viewport.height) * window.devicePixelRatio;
+        (contentHeight / currentCanvas.value.height) * window.devicePixelRatio;
       const horizontalScale =
-        (contentWidth / viewport.width) * window.devicePixelRatio;
+        (contentWidth / currentCanvas.value.width) * window.devicePixelRatio;
       const scale = Math.min(verticalScale, horizontalScale);
       console.log('scale', scale);
       return scale;
     });
 
-    const havePreviousPage = computed(() => currentPageIndex.value > 0);
-    const haveNextPage = computed(
-      () => currentPageIndex.value < numPages.value - 1
+    const pdfDocAsDrawn = ref<PdfDocAsDrawn>({
+      scale: -Infinity,
+      pages: [],
+    });
+    const numPages = computed(() => pdfDocAsDrawn.value.pages.length);
+    const currentCanvas = computed(() =>
+      numPages.value > 0
+        ? pdfDocAsDrawn.value.pages[currentPageIndex.value].canvas
+        : null
     );
-    const isFirstPage = computed(() => currentPageIndex.value === 0);
-    const isLastPage = computed(
-      () => currentPageIndex.value === numPages.value - 1
-    );
-    const previousPage = () => {
-      currentPageIndex.value -= 1;
-    };
-    const nextPage = () => {
-      currentPageIndex.value += 1;
-    };
-    const firstPage = () => (currentPageIndex.value = 0);
-    const lastPage = () => (currentPageIndex.value = numPages.value - 1);
 
-    onMounted(() => loadPdf(url.value));
+    onMounted(() => {
+      loadPdf(url.value)
+        .then((pdfAsLoaded) => drawAllPages(pdfAsLoaded, scale.value))
+        .then((asDrawn) => (pdfDocAsDrawn.value = asDrawn))
+        .catch((error) => {
+          throw error;
+        });
+    });
 
     return {
-      scale,
-      currentPage: currentPageIndex,
+      currentPageIndex,
+      currentCanvas,
       numPages,
-      currentPageProxy,
-      isFirstPage,
-      isLastPage,
-      havePreviousPage,
-      haveNextPage,
-      previousPage,
-      nextPage,
-      firstPage,
-      lastPage,
+      scale,
+      updatePageIndex,
     };
   },
 });

@@ -1,39 +1,55 @@
 <template>
-  <div></div>
+  <div class="pdf-container row q-gutter-sm justify-center">
+    <pdf-page
+      v-for="page in pdfDocAsDrawn.pages"
+      :key="page.pageNumber"
+      :canvas="page.canvas"
+    />
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, toRefs } from 'vue';
-import * as _ from 'lodash';
-import usePdf from 'src/composables/usePdf';
+import { defineComponent, toRefs, ref, onMounted } from 'vue';
+import { usePdf, PdfDocAsDrawn } from 'src/composables/usePdf';
+import PdfPage from 'components/PdfPage.vue';
 
 export default defineComponent({
   name: 'PdfThumbnails',
 
+  components: { PdfPage },
+
   props: {
     url: { type: String, required: true },
+    scale: { type: Number, default: 1.0 },
   },
 
-  setup() {
-    return usePdf();
-  },
+  setup(props) {
+    const { url, scale } = toRefs(props);
+    const { loadPdf, drawAllPages } = usePdf();
 
-  mounted() {
-    const theDiv = this.$el as HTMLDivElement;
-    console.log('THE DIV', theDiv);
+    const pdfDocAsDrawn = ref<PdfDocAsDrawn>({
+      scale: scale.value,
+      pages: [],
+    });
 
-    this.loadPdf(this.url)
-      .then(() => this.getAllPages(1.0))
-      .then((pageContainers) => {
-        _.map(pageContainers, (pageContainer) =>
-          theDiv.appendChild(pageContainer.canvas)
-        );
-      })
-      .then(() => this.getOnePage(9, 2))
-      .then((pageContainer) => theDiv.appendChild(pageContainer.canvas))
-      .catch((error) => {
-        throw error;
-      });
+    onMounted(() => {
+      loadPdf(url.value)
+        .then((asLoaded) => drawAllPages(asLoaded, scale.value))
+        .then((asDrawn) => (pdfDocAsDrawn.value = asDrawn))
+        .catch((error) => {
+          throw error;
+        });
+    });
+
+    return {
+      pdfDocAsDrawn,
+    };
   },
 });
 </script>
+
+<style>
+.pdf-container {
+  background: teal;
+}
+</style>

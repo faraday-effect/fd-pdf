@@ -1,120 +1,55 @@
 import * as _ from 'lodash';
 import 'pdfjs-dist/webpack';
 import { getDocument } from 'pdfjs-dist';
-import { reactive } from 'vue';
 import {
   PDFDocumentLoadingTask,
   PDFDocumentProxy,
   PDFPageProxy,
 } from 'pdfjs-dist/types/display/api';
-import { PageViewport } from 'pdfjs-dist/types/display/display_utils';
+import { reactive } from 'vue';
 
 const PIXEL_RATIO = window.devicePixelRatio || 1;
 
-export interface PdfPageContainer {
-  scale: number;
-  viewport: PageViewport;
+export interface PdfPageAsDrawn {
+  pageNumber: number;
   canvas: HTMLCanvasElement;
 }
 
-export interface PdfContainer {
+export interface PdfDocAsDrawn {
+  scale: number;
+  pages: PdfPageAsDrawn[];
+}
+
+export interface PdfAsLoaded {
+  url: string;
   pdfDocumentProxy: PDFDocumentProxy;
-  numPages: number;
   pdfPageProxies: PDFPageProxy[];
 }
 
-export default function usePdf() {
-  const pageContainersByScale = new Map<number, PdfPageContainer[]>();
-
-  const pdfContainer = reactive<PdfContainer>({
-    pdfDocumentProxy: {} as PDFDocumentProxy,
-    numPages: -Infinity,
-    pdfPageProxies: [] as Array<PDFPageProxy>,
-  });
-
-  async function loadPdf(url: string) {
+export function usePdf() {
+  async function loadPdf(url: string): Promise<PdfAsLoaded> {
     console.log(`Loading PDF from '${url}'`);
-
-    // Clear the map in case we're reused.
-    pageContainersByScale.clear();
 
     // Fetch the PDF document.
     const loadingTask: PDFDocumentLoadingTask = getDocument(url);
-    pdfContainer.pdfDocumentProxy = await loadingTask.promise;
-
-    // Extract the number of pages.
-    pdfContainer.numPages = pdfContainer.pdfDocumentProxy.numPages;
-    console.log(`Loaded ${pdfContainer.numPages} pages`);
+    const pdfDocumentProxy = await loadingTask.promise;
 
     // Load all the pages.
-    pdfContainer.pdfPageProxies = await Promise.all(
-      _.map(_.range(1, pdfContainer.numPages + 1), async (pageNum) =>
-        pdfContainer.pdfDocumentProxy.getPage(pageNum)
+    const numPages = pdfDocumentProxy.numPages;
+    const pdfPageProxies = await Promise.all(
+      _.map(_.range(1, numPages + 1), async (pageNum) =>
+        pdfDocumentProxy.getPage(pageNum)
       )
     );
-  }
+    console.log(`Loaded ${numPages} pages`);
 
-  function validateScale(scale: number) {
-    if (scale <= 0) {
-      throw new Error(`Non-positive scale ${scale}`);
-    }
-  }
-
-  function validatePageNumber(pageNumber: number) {
-    if (pageNumber < 1 || pageNumber > pdfContainer.numPages) {
-      throw new Error(
-        `Page number ${pageNumber} out of range [1, ${pdfContainer.numPages}]`
-      );
-    }
-  }
-
-  async function getOnePage(
-    pageNumber: number,
-    scale: number
-  ): Promise<PdfPageContainer> {
-    validatePageNumber(pageNumber);
-    validateScale(scale);
-
-    let pageContainers = pageContainersByScale.get(scale);
-    if (!pageContainers) {
-      console.log(`Initialize page containers for scale ${scale}`);
-      pageContainers = [];
-      pageContainersByScale.set(scale, pageContainers);
-    }
-
-    // Page number is unity-based; arrays are zero-based.
-    const pageIndex = pageNumber - 1;
-
-    if (!pageContainers[pageIndex]) {
-      console.log(`Draw page ${pageNumber}`);
-      pageContainers[pageIndex] = await drawOnePage(
-        pdfContainer.pdfPageProxies[pageIndex] as PDFPageProxy,
-        scale
-      );
-      pageContainersByScale.set(scale, pageContainers);
-    }
-
-    console.log(`Return page ${pageNumber} for scale ${scale}`);
-    return pageContainers[pageIndex];
-  }
-
-  async function getAllPages(scale: number): Promise<PdfPageContainer[]> {
-    validateScale(scale);
-
-    let pageContainers = pageContainersByScale.get(scale);
-    if (!pageContainers) {
-      console.log(`Draw all pages`);
-      pageContainers = await drawAllPages(scale);
-      pageContainersByScale.set(scale, pageContainers);
-    }
-
-    return pageContainers;
+    return { url, pdfDocumentProxy, pdfPageProxies };
   }
 
   function drawOnePage(
     pdfPageProxy: PDFPageProxy,
     scale: number
-  ): Promise<PdfPageContainer> {
+  ): Promise<PdfPageAsDrawn> {
     const viewport = pdfPageProxy.getViewport({ scale });
 
     const canvas: HTMLCanvasElement = document.createElement('canvas');
@@ -138,11 +73,10 @@ export default function usePdf() {
     return renderTask.promise
       .then(() => {
         console.log(`Rendered page ${pageNumber}`);
-        return {
-          scale,
-          viewport,
+        return reactive<PdfPageAsDrawn>({
+          pageNumber,
           canvas,
-        };
+        });
       })
       .catch((error) => {
         console.error(`Failed to render page ${pageNumber}:`, error);
@@ -150,18 +84,24 @@ export default function usePdf() {
       });
   }
 
-  function drawAllPages(scale: number) {
-    return Promise.all(
-      _.map(pdfContainer.pdfPageProxies, async (pageProxy) =>
-        drawOnePage(pageProxy as PDFPageProxy, scale)
+  async function drawAllPages(
+    pdfAsLoaded: PdfAsLoaded,
+    scale: number
+  ): Promise<PdfDocAsDrawn> {
+    console.log(`Drawing all pages with scale ${scale}`);
+    const pages = await Promise.all(
+      _.map(pdfAsLoaded.pdfPageProxies, async (pageProxy) =>
+        drawOnePage(pageProxy, scale)
       )
     );
+    return reactive<PdfDocAsDrawn>({
+      scale,
+      pages,
+    });
   }
 
   return {
     loadPdf,
-    pdfContainer,
-    getOnePage,
-    getAllPages,
+    drawAllPages,
   };
 }
