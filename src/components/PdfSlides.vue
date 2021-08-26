@@ -43,7 +43,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs, computed } from 'vue';
+import { defineComponent, ref, computed, toRefs, onMounted } from 'vue';
 import PdfPage from 'components/PdfPage.vue';
 import usePdf from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
@@ -60,8 +60,13 @@ export default defineComponent({
   setup(props) {
     const { url } = toRefs(props);
     const $q = useQuasar();
+    const { loadPdf, pdfContainer } = usePdf();
 
-    const { numPages, pageProxies } = usePdf(url);
+    const currentPageIndex = ref(0);
+    const currentPageProxy = computed(
+      () => pdfContainer.pdfPageProxies[currentPageIndex.value]
+    );
+    const numPages = computed(() => pdfContainer.numPages);
 
     const contentSize = computed(() => {
       const windowHeight = $q.screen.height;
@@ -75,7 +80,7 @@ export default defineComponent({
       if (numPages.value < 1) {
         return 1.0;
       }
-      const viewport = pageProxies.value[0].getViewport({ scale: 1.0 });
+      const viewport = currentPageProxy.value.getViewport({ scale: 1.0 });
       const { height: contentHeight, width: contentWidth } = contentSize.value;
       const verticalScale =
         (contentHeight / viewport.height) * window.devicePixelRatio;
@@ -86,27 +91,29 @@ export default defineComponent({
       return scale;
     });
 
-    const currentPage = ref(0);
-    const currentPageProxy = computed(
-      () => pageProxies.value[currentPage.value]
+    const havePreviousPage = computed(() => currentPageIndex.value > 0);
+    const haveNextPage = computed(
+      () => currentPageIndex.value < numPages.value - 1
     );
-    const havePreviousPage = computed(() => currentPage.value > 0);
-    const haveNextPage = computed(() => currentPage.value < numPages.value - 1);
-    const isFirstPage = computed(() => currentPage.value === 0);
-    const isLastPage = computed(() => currentPage.value === numPages.value - 1);
+    const isFirstPage = computed(() => currentPageIndex.value === 0);
+    const isLastPage = computed(
+      () => currentPageIndex.value === numPages.value - 1
+    );
     const previousPage = () => {
-      currentPage.value -= 1;
+      currentPageIndex.value -= 1;
     };
     const nextPage = () => {
-      currentPage.value += 1;
+      currentPageIndex.value += 1;
     };
-    const firstPage = () => (currentPage.value = 0);
-    const lastPage = () => (currentPage.value = numPages.value - 1);
+    const firstPage = () => (currentPageIndex.value = 0);
+    const lastPage = () => (currentPageIndex.value = numPages.value - 1);
+
+    onMounted(() => loadPdf(url.value));
 
     return {
-      numPages,
       scale,
-      currentPage,
+      currentPage: currentPageIndex,
+      numPages,
       currentPageProxy,
       isFirstPage,
       isLastPage,

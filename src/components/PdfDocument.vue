@@ -47,15 +47,14 @@ export default defineComponent({
 
   setup(props) {
     const { url } = toRefs(props);
-
-    const { pdfDocumentProxy, numPages, pageProxies } = usePdf(url);
+    const { loadPdf, pdfContainer } = usePdf();
 
     let pageOptions = ref([] as { label: string; value: number }[]);
     let pageVisible = ref([] as number[]);
 
     const createControls = () => {
       console.log('Creating controls');
-      _.map(pageProxies.value, (pageProxy) => {
+      _.map(pdfContainer.pdfPageProxies, (pageProxy) => {
         const pageNum = pageProxy.pageNumber;
         pageOptions.value.push({
           label: `P${pageNum}`,
@@ -63,30 +62,34 @@ export default defineComponent({
         });
         pageVisible.value.push(pageNum);
       });
-      console.log('Created %d controls', pageProxies.value.length);
+      console.log('Created %d controls', pdfContainer.pdfPageProxies.length);
     };
 
     const visiblePages = computed(() => {
-      return _.filter(pageProxies.value, (proxy) =>
+      return _.filter(pdfContainer.pdfPageProxies, (proxy) =>
         pageVisible.value.includes(proxy.pageNumber)
       );
     });
 
     const showAllPages = () => {
-      pageVisible.value = _.range(1, pdfDocumentProxy.value.numPages + 1);
+      pageVisible.value = _.range(
+        1,
+        pdfContainer.pdfDocumentProxy.numPages + 1
+      );
     };
 
     const hideAllPages = () => {
       pageVisible.value = [];
     };
 
-    onMounted(createControls);
-    watch(pageProxies, createControls);
+    onMounted(async () => {
+      await loadPdf(url.value);
+      createControls();
+    });
+
+    watch(pdfContainer.pdfPageProxies, createControls);
 
     return {
-      pdfDocumentProxy,
-      numPages,
-      pageProxies,
       pageOptions,
       pageVisible,
       visiblePages,

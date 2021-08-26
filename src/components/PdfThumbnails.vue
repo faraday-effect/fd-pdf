@@ -3,9 +3,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, h } from 'vue';
-import { PdfContainer, PdfPageContainer } from 'src/helpers/PdfContainer';
+import { defineComponent, toRefs } from 'vue';
 import * as _ from 'lodash';
+import usePdf from 'src/composables/usePdf';
 
 export default defineComponent({
   name: 'PdfThumbnails',
@@ -14,20 +14,22 @@ export default defineComponent({
     url: { type: String, required: true },
   },
 
+  setup() {
+    return usePdf();
+  },
+
   mounted() {
-    const pdfContainer = new PdfContainer(this.url);
     const theDiv = this.$el as HTMLDivElement;
     console.log('THE DIV', theDiv);
 
-    pdfContainer
-      .loadPdf()
-      .then(() => pdfContainer.getAllPages(1.0))
+    this.loadPdf(this.url)
+      .then(() => this.getAllPages(1.0))
       .then((pageContainers) => {
         _.map(pageContainers, (pageContainer) =>
           theDiv.appendChild(pageContainer.canvas)
         );
       })
-      .then(() => pdfContainer.getOnePage(18, 2))
+      .then(() => this.getOnePage(9, 2))
       .then((pageContainer) => theDiv.appendChild(pageContainer.canvas))
       .catch((error) => {
         throw error;
