@@ -23,7 +23,7 @@ export default defineComponent({
       // url: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
       url: 'http://192.168.4.65:3000/git-intro.slides.pdf',
 
-      showThumbnails: true,
+      showThumbnails: false,
       showSlides: true,
       showDocument: false,
     };

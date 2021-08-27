@@ -1,25 +1,46 @@
 <template>
   <div class="row justify-center">
-    Index: {{ currentPageIndex }}, Count: {{ numPages }}
+    <div class="column">
+      <q-toggle label="Show Thumbnails" v-model="thumbnailsVisible" />
+      <pdf-thumbnails-dialog
+        v-model="thumbnailsVisible"
+        :pdf-doc-as-drawn="pdfDocAsDrawn"
+      />
+      Index: {{ currentPageIndex }}, Count: {{ numPages }}
+    </div>
     <pdf-page-picker :num-pages="numPages" @pageIndex="updatePageIndex" />
     <pdf-page v-if="currentCanvas" :canvas="currentCanvas" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, toRefs, onMounted } from 'vue';
+import {
+  defineComponent,
+  ref,
+  computed,
+  toRefs,
+  onMounted,
+  reactive,
+} from 'vue';
 import PdfPage from 'components/PdfPage.vue';
 import { PdfDocAsDrawn, usePdf } from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
 import PdfPagePicker from 'components/PdfPagePicker.vue';
+import PdfThumbnailsDialog from 'components/PdfThumbnailsDialog.vue';
 
 export default defineComponent({
   name: 'PdfSlides',
 
-  components: { PdfPagePicker, PdfPage },
+  components: { PdfThumbnailsDialog, PdfPagePicker, PdfPage },
 
   props: {
     url: { type: String, required: true },
+  },
+
+  data() {
+    return {
+      thumbnailsVisible: false,
+    };
   },
 
   setup(props) {
@@ -56,21 +77,31 @@ export default defineComponent({
       return scale;
     });
 
-    const pdfDocAsDrawn = ref<PdfDocAsDrawn>({
+    const pdfDocAsDrawn = reactive<PdfDocAsDrawn>({
       scale: -Infinity,
       pages: [],
     });
-    const numPages = computed(() => pdfDocAsDrawn.value.pages.length);
-    const currentCanvas = computed(() =>
-      numPages.value > 0
-        ? pdfDocAsDrawn.value.pages[currentPageIndex.value].canvas
-        : null
-    );
+    const numPages = computed(() => pdfDocAsDrawn.pages.length);
+    const currentCanvas = computed(() => {
+      const idx = currentPageIndex.value;
+      console.log('IDX', idx, 'NUM PAGES', numPages.value);
+      if (numPages.value < 1) {
+        console.error('NO PAGES');
+        return null;
+      } else {
+        const page = pdfDocAsDrawn.pages[currentPageIndex.value];
+        console.log('NUM', page.pageNumber, 'CANVAS', page.canvas);
+        return page.canvas;
+      }
+    });
 
     onMounted(() => {
       loadPdf(url.value)
         .then((pdfAsLoaded) => drawAllPages(pdfAsLoaded, scale.value))
-        .then((asDrawn) => (pdfDocAsDrawn.value = asDrawn))
+        .then((asDrawn) => {
+          pdfDocAsDrawn.scale = asDrawn.scale;
+          pdfDocAsDrawn.pages = asDrawn.pages;
+        })
         .catch((error) => {
           throw error;
         });
@@ -82,6 +113,7 @@ export default defineComponent({
       numPages,
       scale,
       updatePageIndex,
+      pdfDocAsDrawn,
     };
   },
 });

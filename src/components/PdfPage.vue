@@ -1,9 +1,9 @@
 <template>
-  <canvas v-if="visible" ref="theCanvas"></canvas>
+  <canvas ref="canvasElement" v-if="visible"></canvas>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, toRefs, ref, onMounted, watch } from 'vue';
 
 export default defineComponent({
   name: 'PdfPage',
@@ -19,18 +19,30 @@ export default defineComponent({
     },
   },
 
-  mounted() {
-    const theCanvas = this.$refs.theCanvas as HTMLCanvasElement;
-    const canvasContext = theCanvas.getContext('2d');
-    if (canvasContext) {
-      theCanvas.height = this.canvas.height;
-      theCanvas.width = this.canvas.width;
-      theCanvas.style.height = this.canvas.style.height;
-      theCanvas.style.width = this.canvas.style.width;
-      canvasContext.drawImage(this.canvas, 0, 0);
-      return;
-    }
-    throw new Error('Something went haywire with the canvas or context');
+  setup(props) {
+    const canvasElement = ref<HTMLCanvasElement>();
+    const { canvas: canvasProp } = toRefs(props);
+
+    const updateCanvas = () => {
+      if (canvasElement.value) {
+        const canvasContext = canvasElement.value.getContext('2d');
+        if (!canvasContext) {
+          throw new Error('Something went haywire with the canvas or context');
+        }
+        canvasElement.value.height = canvasProp.value.height;
+        canvasElement.value.width = canvasProp.value.width;
+        canvasElement.value.style.height = canvasProp.value.style.height;
+        canvasElement.value.style.width = canvasProp.value.style.width;
+        canvasContext.drawImage(canvasProp.value, 0, 0);
+      }
+    };
+
+    onMounted(updateCanvas);
+    watch(canvasProp, updateCanvas);
+
+    return {
+      canvasElement,
+    };
   },
 });
 </script>
