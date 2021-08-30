@@ -46,3 +46,10 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+canvas {
+  border: teal solid thin;
+  border-radius: 4px;
+}
+</style>

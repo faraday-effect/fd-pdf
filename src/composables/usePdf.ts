@@ -6,12 +6,14 @@ import {
   PDFDocumentProxy,
   PDFPageProxy,
 } from 'pdfjs-dist/types/display/api';
+import { PageViewport } from 'pdfjs-dist/types/display/display_utils';
 import { reactive } from 'vue';
 
 const PIXEL_RATIO = window.devicePixelRatio || 1;
 
 export interface PdfPageAsDrawn {
   pageNumber: number;
+  viewport: PageViewport;
   canvas: HTMLCanvasElement;
 }
 
@@ -75,6 +77,7 @@ export function usePdf() {
         console.log(`Rendered page ${pageNumber}`);
         return reactive<PdfPageAsDrawn>({
           pageNumber,
+          viewport,
           canvas,
         });
       })

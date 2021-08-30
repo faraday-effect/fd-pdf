@@ -21,9 +21,10 @@ import {
   toRefs,
   onMounted,
   reactive,
+  watch,
 } from 'vue';
 import PdfPage from 'components/PdfPage.vue';
-import { PdfDocAsDrawn, usePdf } from 'src/composables/usePdf';
+import { PdfAsLoaded, PdfDocAsDrawn, usePdf } from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
 import PdfPagePicker from 'components/PdfPagePicker.vue';
 import PdfThumbnailsDialog from 'components/PdfThumbnailsDialog.vue';
@@ -48,11 +49,25 @@ export default defineComponent({
     const $q = useQuasar();
     const { loadPdf, drawAllPages } = usePdf();
 
+    const pdfAsLoaded = ref<PdfAsLoaded>();
+    const pdfDocAsDrawn = reactive<PdfDocAsDrawn>({
+      scale: -Infinity,
+      pages: [],
+    });
+    const numPages = computed(() => pdfDocAsDrawn.pages.length);
+    const isDocLoaded = computed(() => numPages.value > 0);
+
     const currentPageIndex = ref(0);
     const updatePageIndex = (newIndex: number) => {
-      console.log('Update index to', newIndex);
       currentPageIndex.value = newIndex;
     };
+
+    const currentPage = computed(
+      () => pdfDocAsDrawn.pages[currentPageIndex.value]
+    );
+    const currentCanvas = computed(() =>
+      isDocLoaded.value ? currentPage.value.canvas : null
+    );
 
     const contentSize = computed(() => {
       const windowHeight = $q.screen.height;
@@ -63,55 +78,57 @@ export default defineComponent({
       };
     });
 
-    const scale = computed(() => {
-      if (!currentCanvas.value) {
-        return 1.0;
+    const scale = ref(1.0);
+    const calculateScale = () => {
+      if (!pdfAsLoaded.value) {
+        console.error('No loaded PDF');
+        return;
       }
+      const viewport = pdfAsLoaded.value.pdfPageProxies[
+        currentPageIndex.value
+      ].getViewport({ scale: 1.0 });
       const { height: contentHeight, width: contentWidth } = contentSize.value;
       const verticalScale =
-        (contentHeight / currentCanvas.value.height) * window.devicePixelRatio;
+        (contentHeight / viewport.height) * window.devicePixelRatio;
       const horizontalScale =
-        (contentWidth / currentCanvas.value.width) * window.devicePixelRatio;
-      const scale = Math.min(verticalScale, horizontalScale);
-      console.log('scale', scale);
-      return scale;
-    });
-
-    const pdfDocAsDrawn = reactive<PdfDocAsDrawn>({
-      scale: -Infinity,
-      pages: [],
-    });
-    const numPages = computed(() => pdfDocAsDrawn.pages.length);
-    const currentCanvas = computed(() => {
-      const idx = currentPageIndex.value;
-      console.log('IDX', idx, 'NUM PAGES', numPages.value);
-      if (numPages.value < 1) {
-        console.error('NO PAGES');
-        return null;
-      } else {
-        const page = pdfDocAsDrawn.pages[currentPageIndex.value];
-        console.log('NUM', page.pageNumber, 'CANVAS', page.canvas);
-        return page.canvas;
-      }
-    });
+        (contentWidth / viewport.width) * window.devicePixelRatio;
+      scale.value = Math.min(verticalScale, horizontalScale);
+      console.log(`Calculated scale of ${scale.value}`);
+    };
 
     onMounted(() => {
       loadPdf(url.value)
-        .then((pdfAsLoaded) => drawAllPages(pdfAsLoaded, scale.value))
-        .then((asDrawn) => {
-          pdfDocAsDrawn.scale = asDrawn.scale;
-          pdfDocAsDrawn.pages = asDrawn.pages;
+        .then((pdf) => {
+          console.log('PDF Loaded');
+          pdfAsLoaded.value = pdf;
         })
         .catch((error) => {
           throw error;
         });
     });
 
+    const scaleAndDrawAllPages = () => {
+      if (pdfAsLoaded.value) {
+        calculateScale();
+        drawAllPages(pdfAsLoaded.value, scale.value)
+          .then((asDrawn) => {
+            pdfDocAsDrawn.scale = asDrawn.scale;
+            pdfDocAsDrawn.pages = asDrawn.pages;
+          })
+          .catch((error) => {
+            throw error;
+          });
+      }
+    };
+
+    watch([pdfAsLoaded, contentSize], () => {
+      scaleAndDrawAllPages();
+    });
+
     return {
       currentPageIndex,
       currentCanvas,
       numPages,
-      scale,
       updatePageIndex,
       pdfDocAsDrawn,
     };
