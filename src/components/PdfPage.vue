@@ -1,9 +1,9 @@
 <template>
-  <canvas ref="canvasElement" v-if="visible"></canvas>
+  <canvas ref="canvasElement" v-if="visible" @click="$emit('clicked')"></canvas>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs, ref, onMounted, watch } from 'vue';
+import { defineComponent, PropType, toRef, ref, onMounted, watch } from 'vue';
 
 export default defineComponent({
   name: 'PdfPage',
@@ -21,7 +21,7 @@ export default defineComponent({
 
   setup(props) {
     const canvasElement = ref<HTMLCanvasElement>();
-    const { canvas: canvasProp } = toRefs(props);
+    const canvasProp = toRef(props, 'canvas');
 
     const updateCanvas = () => {
       if (canvasElement.value) {
@@ -50,6 +50,6 @@ export default defineComponent({
 <style scoped>
 canvas {
   border: teal solid thin;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 </style>

@@ -4,7 +4,7 @@
       <q-toggle label="Show Thumbnails" v-model="thumbnailsVisible" />
       <pdf-thumbnails-dialog
         v-model="thumbnailsVisible"
-        :pdf-doc-as-drawn="pdfDocAsDrawn"
+        :pdf-doc-as-drawn="thumbnails"
       />
       Index: {{ currentPageIndex }}, Count: {{ numPages }}
     </div>
@@ -28,6 +28,7 @@ import { PdfAsLoaded, PdfDocAsDrawn, usePdf } from 'src/composables/usePdf';
 import { useQuasar } from 'quasar';
 import PdfPagePicker from 'components/PdfPagePicker.vue';
 import PdfThumbnailsDialog from 'components/PdfThumbnailsDialog.vue';
+import * as _ from 'lodash';
 
 export default defineComponent({
   name: 'PdfSlides',
@@ -121,9 +122,21 @@ export default defineComponent({
       }
     };
 
-    watch([pdfAsLoaded, contentSize], () => {
+    const thumbnails = ref<PdfDocAsDrawn>();
+
+    watch(pdfAsLoaded, () => {
       scaleAndDrawAllPages();
+      if (pdfAsLoaded.value) {
+        drawAllPages(pdfAsLoaded.value, 1.0)
+          .then((asDrawn) => {
+            thumbnails.value = asDrawn;
+          })
+          .catch((error) => {
+            throw error;
+          });
+      }
     });
+    watch(contentSize, _.debounce(scaleAndDrawAllPages, 500));
 
     return {
       currentPageIndex,
@@ -131,6 +144,7 @@ export default defineComponent({
       numPages,
       updatePageIndex,
       pdfDocAsDrawn,
+      thumbnails,
     };
   },
 });

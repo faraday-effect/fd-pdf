@@ -2,7 +2,7 @@
   <q-dialog>
     <q-card style="width: 1000px; max-width: 80vw">
       <q-card-section>
-        <h6>Thumbnails</h6>
+        <div class="text-h6">Thumbnails</div>
       </q-card-section>
       <q-card-section>
         <div class="pdf-container row q-gutter-sm justify-center">
@@ -10,6 +10,7 @@
             v-for="page in pdfDocAsDrawn.pages"
             :key="page.pageNumber"
             :canvas="page.canvas"
+            @click="thumbnailClicked"
           />
         </div>
       </q-card-section>
@@ -31,6 +32,12 @@ export default defineComponent({
     pdfDocAsDrawn: {
       type: Object as PropType<PdfDocAsDrawn>,
       required: true,
+    },
+  },
+
+  methods: {
+    thumbnailClicked() {
+      console.log('THUMBNAIL CLICKED');
     },
   },
 });
