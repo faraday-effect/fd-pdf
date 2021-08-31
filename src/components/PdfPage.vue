@@ -1,5 +1,5 @@
 <template>
-  <canvas ref="canvasElement" v-if="visible" @click="$emit('clicked')"></canvas>
+  <canvas ref="canvasElement" v-if="visible" @click="$emit('click')"></canvas>
 </template>
 
 <script lang="ts">
@@ -7,7 +7,7 @@ import { defineComponent, PropType, toRef, ref, onMounted, watch } from 'vue';
 
 export default defineComponent({
   name: 'PdfPage',
-
+  emits: ['click'],
   props: {
     canvas: {
       type: Object as PropType<HTMLCanvasElement>,

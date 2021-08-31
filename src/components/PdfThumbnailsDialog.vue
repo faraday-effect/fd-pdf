@@ -10,7 +10,7 @@
             v-for="page in pdfDocAsDrawn.pages"
             :key="page.pageNumber"
             :canvas="page.canvas"
-            @click="thumbnailClicked"
+            @click="$emit('click', page.pageNumber)"
           />
         </div>
       </q-card-section>
@@ -25,19 +25,13 @@ import PdfPage from 'components/PdfPage.vue';
 
 export default defineComponent({
   name: 'PdfThumbnailsDialog',
-
+  emits: ['click'],
   components: { PdfPage },
 
   props: {
     pdfDocAsDrawn: {
       type: Object as PropType<PdfDocAsDrawn>,
       required: true,
-    },
-  },
-
-  methods: {
-    thumbnailClicked() {
-      console.log('THUMBNAIL CLICKED');
     },
   },
 });

@@ -1,14 +1,20 @@
 <template>
   <div class="row justify-center">
     <div class="column">
-      <q-toggle label="Show Thumbnails" v-model="thumbnailsVisible" />
+      <q-btn label="Show Thumbnails" @click="thumbnailsVisible = true" />
       <pdf-thumbnails-dialog
+        v-if="thumbnails"
         v-model="thumbnailsVisible"
         :pdf-doc-as-drawn="thumbnails"
+        @click="thumbnailClicked"
       />
       Index: {{ currentPageIndex }}, Count: {{ numPages }}
     </div>
-    <pdf-page-picker :num-pages="numPages" @pageIndex="updatePageIndex" />
+    <pdf-page-picker
+      :num-pages="numPages"
+      :current-page-index="currentPageIndex"
+      @update:current-page-index="currentPageIndex = $event"
+    />
     <pdf-page v-if="currentCanvas" :canvas="currentCanvas" />
   </div>
 </template>
@@ -18,7 +24,7 @@ import {
   defineComponent,
   ref,
   computed,
-  toRefs,
+  toRef,
   onMounted,
   reactive,
   watch,
@@ -32,21 +38,13 @@ import * as _ from 'lodash';
 
 export default defineComponent({
   name: 'PdfSlides',
-
   components: { PdfThumbnailsDialog, PdfPagePicker, PdfPage },
-
   props: {
     url: { type: String, required: true },
   },
 
-  data() {
-    return {
-      thumbnailsVisible: false,
-    };
-  },
-
   setup(props) {
-    const { url } = toRefs(props);
+    const url = toRef(props, 'url');
     const $q = useQuasar();
     const { loadPdf, drawAllPages } = usePdf();
 
@@ -122,10 +120,19 @@ export default defineComponent({
       }
     };
 
+    const thumbnailsVisible = ref(false);
     const thumbnails = ref<PdfDocAsDrawn>();
+    const thumbnailClicked = (pageNumber: number) => {
+      console.log('PdfSlides THUMBNAIL', pageNumber);
+      thumbnailsVisible.value = false;
+      currentPageIndex.value = pageNumber - 1;
+    };
 
     watch(pdfAsLoaded, () => {
+      // Create the slides.
       scaleAndDrawAllPages();
+
+      // Create the thumbnails.
       if (pdfAsLoaded.value) {
         drawAllPages(pdfAsLoaded.value, 1.0)
           .then((asDrawn) => {
@@ -145,6 +152,8 @@ export default defineComponent({
       updatePageIndex,
       pdfDocAsDrawn,
       thumbnails,
+      thumbnailsVisible,
+      thumbnailClicked,
     };
   },
 });

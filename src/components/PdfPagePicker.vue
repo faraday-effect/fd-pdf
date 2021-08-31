@@ -13,7 +13,7 @@
       @click="toPreviousPage"
     />
     <q-slider
-      v-model="currentPageIndex"
+      :model-value="currentPageIndex"
       :min="0"
       :max="numPages - 1"
       vertical
@@ -37,23 +37,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, toRef, computed } from 'vue';
 
 export default defineComponent({
   name: 'PdfPagePicker',
-
-  emits: ['pageIndex', 'pageNumber'],
-
   props: {
+    currentPageIndex: { type: Number, required: true },
     numPages: { type: Number, required: true },
   },
+  emits: ['update:currentPageIndex'],
 
   setup(props, { emit }) {
-    const currentPageIndex = ref(0);
+    const currentPageIndex = toRef(props, 'currentPageIndex');
     const setCurrentPageIndex = (newIndex: number) => {
-      currentPageIndex.value = newIndex;
-      emit('pageIndex', currentPageIndex.value);
-      emit('pageNumber', currentPageNumber.value);
+      emit('update:currentPageIndex', newIndex);
     };
 
     const currentPageNumber = computed(() => currentPageIndex.value + 1);
@@ -76,7 +73,6 @@ export default defineComponent({
     const toLastPage = () => setCurrentPageIndex(props.numPages - 1);
 
     return {
-      currentPageIndex,
       currentPageNumber,
       setCurrentPageIndex,
 
