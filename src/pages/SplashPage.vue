@@ -1,16 +1,21 @@
 <template>
-  <q-page padding>
-    <div class="column" style="height: 100%">
-      <div class="col row justify-around text-h6">
-        <span>{{ courseNumber }}</span>
-        <span>{{ courseName }}</span>
-        <span>{{ semester }}</span>
+  <q-page>
+    <div class="splash-page">
+      <div class="title-text-block">
+        <div class="several-columns text-h6">
+          <span>{{ courseNumber }}</span>
+          <span>{{ courseName }}</span>
+          <span>{{ semester }}</span>
+        </div>
+        <div class="course-title text-center text-h4">
+          Non-Deterministic Finite State Automata
+        </div>
+        <div class="several-columns text-h6">
+          <span>{{ presenter }}</span>
+          <span>{{ currentDate }}</span>
+        </div>
       </div>
-      <div class="col text-h3 text-center">
-        Non-Deterministic Finite State Automata
-      </div>
-      <div class="col text-h4 text-center">{{ currentDate }}</div>
-      <quick-response-code :qr-code="qrCode" scale="8" />
+      <quick-response-code class="qr-code" :qr-code="qrCode" />
     </div>
   </q-page>
 </template>
@@ -26,9 +31,37 @@ export default {
       courseNumber: 'COS 380',
       courseName: 'Natural Language Processing',
       currentDate: 'F/03-Sep-2021',
-      qrCode: 'http://faraday.cse.taylor.edu',
+      qrCode: 'https://faraday.cse.taylor.edu',
+      presenter: 'Dr. Tom Nurkkala',
     };
   },
 };
 </script>
-<style></style>
+<style>
+.splash-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 100vh;
+}
+
+.title-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1rem;
+  border-bottom: 1px teal solid;
+  border-top: 8px teal solid;
+}
+
+.several-columns {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.course-title {
+  margin: 2rem 0;
+}
+</style>

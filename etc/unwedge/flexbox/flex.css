@@ -1,0 +1,28 @@
+:root {
+  font-family: 'Roboto', sans-serif;
+}
+
+.title-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
+}
+
+.several-columns {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+.course-title {
+  font-size: 2rem;
+  text-align: -moz-center;
+  margin: 2rem 0;
+}
+
+.class-info {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
