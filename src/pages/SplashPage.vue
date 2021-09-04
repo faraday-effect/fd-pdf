@@ -37,7 +37,8 @@ export default {
   },
 };
 </script>
-<style>
+
+<style scoped>
 .splash-page {
   display: flex;
   flex-direction: column;
@@ -59,6 +60,7 @@ export default {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  text-align: center;
 }
 
 .course-title {
