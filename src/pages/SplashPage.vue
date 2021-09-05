@@ -15,16 +15,23 @@
           <span>{{ currentDate }}</span>
         </div>
       </div>
+      <div>
+        <q-toggle v-model="clockRunning" label="Run the Clock" />
+      </div>
+      <real-time-clock class="text-h4" :clock-running="clockRunning" />
       <quick-response-code class="qr-code" :qr-code="qrCode" />
     </div>
   </q-page>
 </template>
 
 <script lang="ts">
+import { defineComponent } from 'vue';
 import QuickResponseCode from 'components/QuickResponseCode.vue';
-export default {
+import RealTimeClock from 'components/RealTimeClock.vue';
+
+export default defineComponent({
   name: 'SplashPage',
-  components: { QuickResponseCode },
+  components: { RealTimeClock, QuickResponseCode },
   data() {
     return {
       semester: 'Fall 2021',
@@ -33,9 +40,10 @@ export default {
       currentDate: 'F/03-Sep-2021',
       qrCode: 'https://faraday.cse.taylor.edu',
       presenter: 'Dr. Tom Nurkkala',
+      clockRunning: false,
     };
   },
-};
+});
 </script>
 
 <style scoped>
