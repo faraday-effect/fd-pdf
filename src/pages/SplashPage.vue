@@ -19,6 +19,24 @@
         <q-toggle v-model="clockRunning" label="Run the Clock" />
       </div>
       <real-time-clock class="text-h4" :clock-running="clockRunning" />
+      <div>
+        Expire After:
+        <count-down-timer
+          class="text-h4"
+          timer-id="expire after duration"
+          expire-after="PT11S"
+          @expired="timesUp"
+        />
+      </div>
+      <div>
+        Expire At {{ expireAt }}:
+        <count-down-timer
+          class="text-h4"
+          timer-id="expire at time"
+          :expire-at="expireAt"
+          @expired="timesUp"
+        />
+      </div>
       <quick-response-code class="qr-code" :qr-code="qrCode" />
     </div>
   </q-page>
@@ -27,11 +45,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import QuickResponseCode from 'components/QuickResponseCode.vue';
-import RealTimeClock from 'components/RealTimeClock.vue';
+import RealTimeClock from 'components/WallClock.vue';
+import CountDownTimer from 'components/CountDownTimer.vue';
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'SplashPage',
-  components: { RealTimeClock, QuickResponseCode },
+  components: { CountDownTimer, RealTimeClock, QuickResponseCode },
   data() {
     return {
       semester: 'Fall 2021',
@@ -41,7 +61,13 @@ export default defineComponent({
       qrCode: 'https://faraday.cse.taylor.edu',
       presenter: 'Dr. Tom Nurkkala',
       clockRunning: false,
+      expireAt: DateTime.now().plus({ seconds: 7 }),
     };
+  },
+  methods: {
+    timesUp(timerId: string) {
+      console.log('TIMER EXPIRED!', timerId);
+    },
   },
 });
 </script>

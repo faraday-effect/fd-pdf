@@ -9,7 +9,7 @@ import { defineComponent, toRef, ref, watch, onMounted } from 'vue';
 import { DateTime } from 'luxon';
 
 export default defineComponent({
-  name: 'RealTimeClock',
+  name: 'WallClock',
   props: {
     clockRunning: { type: Boolean, default: false },
   },
